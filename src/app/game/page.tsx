@@ -87,7 +87,7 @@ export default function GameScreen() {
     return true;
   };
 
-  const checkCompletion = useCallback((currentBoard: number[][]) => {
+  const checkCompletion = (currentBoard: number[][], currentMoves: number) => {
     if (!n) return;
     let queensCount = 0;
     for (let r = 0; r < n; r++) {
@@ -113,12 +113,12 @@ export default function GameScreen() {
       }
 
       if (valid) {
-        handleLevelCompletion();
+        handleLevelCompletion(currentMoves);
       }
     }
-  }, [n]);
+  };
 
-  const handleLevelCompletion = async () => {
+  const handleLevelCompletion = async (finalMoves: number) => {
     if (!n) return;
     setTimerActive(false);
     setIsLevelCompleted(true);
@@ -131,7 +131,7 @@ export default function GameScreen() {
         body: JSON.stringify({
           level: n,
           time,
-          moves,
+          moves: finalMoves,
           invalidMoves
         }),
       });
@@ -230,7 +230,7 @@ export default function GameScreen() {
       setBoard(newBoard);
       setMoves(m => m + 1);
       
-      checkCompletion(newBoard);
+      checkCompletion(newBoard, moves + 1);
     }
   };
 
