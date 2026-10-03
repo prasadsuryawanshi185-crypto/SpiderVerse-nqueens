@@ -1,26 +1,201 @@
 @import "tailwindcss";
 
+@theme {
+  --color-neon-red: #ff003c;
+  --color-neon-cyan: #00f0ff;
+  --color-neon-magenta: #ff00ff;
+  --color-neon-violet: #8a2be2;
+  --color-dark-bg: #050505;
+  --color-panel-bg: rgba(20, 20, 25, 0.85);
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-comic: "Impact", "Arial Black", sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #050505;
+  --foreground: #f0f0f0;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Halftone and grid background pattern */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(255, 0, 60, 0.05) 0%, transparent 60%),
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background-position: center center;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Comic dots (Halftone effect) overlay */
+.halftone-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 8px 8px;
+  z-index: -1;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.text-glitch {
+  position: relative;
+  display: inline-block;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-family: var(--font-comic);
+}
+
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+
+.text-glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 var(--color-neon-cyan);
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim 3s infinite linear alternate-reverse;
+}
+
+.text-glitch::after {
+  left: -2px;
+  text-shadow: -2px 0 var(--color-neon-red);
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim 2.5s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim {
+  0% {
+    clip: rect(32px, 9999px, 28px, 0);
+  }
+  20% {
+    clip: rect(13px, 9999px, 86px, 0);
+  }
+  40% {
+    clip: rect(74px, 9999px, 12px, 0);
+  }
+  60% {
+    clip: rect(98px, 9999px, 57px, 0);
+  }
+  80% {
+    clip: rect(3px, 9999px, 66px, 0);
+  }
+  100% {
+    clip: rect(41px, 9999px, 15px, 0);
+  }
+}
+
+.comic-panel {
+  background: var(--color-panel-bg);
+  border: 2px solid #333;
+  box-shadow: 
+    4px 4px 0px var(--color-neon-red),
+    -4px -4px 0px var(--color-neon-cyan);
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+}
+
+.comic-button {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  font-family: var(--font-comic);
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
+  font-size: 1.25rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  box-shadow: 3px 3px 0 var(--color-neon-magenta);
+  transform: skewX(-10deg);
+}
+
+.comic-button > span {
+  display: inline-block;
+  transform: skewX(10deg); /* Counter skew for text */
+}
+
+.comic-button:hover {
+  background: var(--color-neon-red);
+  border-color: var(--color-neon-red);
+  box-shadow: 4px 4px 0 var(--color-neon-cyan);
+  transform: skewX(-10deg) translate(-2px, -2px);
+  color: white;
+}
+
+.comic-button:active {
+  transform: skewX(-10deg) translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-neon-cyan);
+}
+
+.board-cell {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.board-cell.white {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.board-cell.black {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.board-cell:hover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--color-neon-cyan);
+  box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.5);
+  pointer-events: none;
+}
+
+.board-cell.invalid-conflict {
+  background-color: rgba(255, 0, 60, 0.3) !important;
+  border: 1px solid var(--color-neon-red);
+  box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.6);
+}
+
+.neon-border {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(255, 0, 255, 0.1);
+}
+
+.spider-web-bg {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,255,255,0.03) 40px, rgba(255,255,255,0.03) 41px),
+    repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255,255,255,0.03) 40px, rgba(255,255,255,0.03) 41px);
+  z-index: -1;
+  pointer-events: none;
 }
