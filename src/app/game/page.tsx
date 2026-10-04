@@ -13,6 +13,7 @@ export default function GameScreen() {
   const [time, setTime] = useState(0);
   const [moves, setMoves] = useState(0);
   const [invalidMoves, setInvalidMoves] = useState(0);
+  const [levelStartTime, setLevelStartTime] = useState<number | null>(null);
   const [isLevelCompleted, setIsLevelCompleted] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -38,10 +39,20 @@ export default function GameScreen() {
 
         const level = attempt.currentLevel; // 4, 5, or 6
         setN(level);
-        setBoard(Array(level).fill(null).map(() => Array(level).fill(0)));
-        setTime(0);
-        setMoves(0);
-        setInvalidMoves(0);
+        
+        if (attempt.currentBoard && attempt.currentBoard.length === level) {
+          setBoard(attempt.currentBoard);
+        } else {
+          setBoard(Array(level).fill(null).map(() => Array(level).fill(0)));
+        }
+
+        const startTs = new Date(attempt.levelStartTime).getTime();
+        setLevelStartTime(startTs);
+        setTime(Math.max(0, Math.floor((Date.now() - startTs) / 1000)));
+        
+        setMoves(attempt.currentMoves || 0);
+        setInvalidMoves(attempt.currentInvalidMoves || 0);
+        
         setIsLevelCompleted(false);
         setTimerActive(true);
         setLoading(false);
@@ -54,16 +65,16 @@ export default function GameScreen() {
     fetchAttempt();
   }, [router]);
 
-  // Timer
+  // Timer securely based on server timestamp
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (timerActive && !isLevelCompleted && board.length > 0) {
+    if (timerActive && !isLevelCompleted && levelStartTime) {
       interval = setInterval(() => {
-        setTime((prev) => prev + 1);
+        setTime(Math.max(0, Math.floor((Date.now() - levelStartTime) / 1000)));
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [timerActive, isLevelCompleted, board]);
+  }, [timerActive, isLevelCompleted, levelStartTime]);
 
   const isValidPlacement = (currentBoard: number[][], row: number, col: number) => {
     if (!n) return false;
@@ -113,12 +124,20 @@ export default function GameScreen() {
       }
 
       if (valid) {
-        handleLevelCompletion(currentMoves);
+        handleLevelCompletion(currentMoves, currentBoard);
       }
     }
   };
 
-  const handleLevelCompletion = async (finalMoves: number) => {
+  const syncState = (newBoard: number[][], newMoves: number, newInvalid: number) => {
+    fetch("/api/attempt", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ board: newBoard, moves: newMoves, invalidMoves: newInvalid }),
+    }).catch(e => console.error("Sync failed", e));
+  };
+
+  const handleLevelCompletion = async (finalMoves: number, finalBoard: number[][]) => {
     if (!n) return;
     setTimerActive(false);
     setIsLevelCompleted(true);
@@ -130,7 +149,7 @@ export default function GameScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           level: n,
-          time,
+          board: finalBoard,
           moves: finalMoves,
           invalidMoves
         }),
@@ -207,11 +226,13 @@ export default function GameScreen() {
       newBoard[row][col] = 0;
       setBoard(newBoard);
       setMoves(m => m + 1);
+      syncState(newBoard, moves + 1, invalidMoves);
     } else {
       const attacked = attackedCells();
       if (attacked[row][col]) {
         // Prevents placement on an attacked cell
         setInvalidMoves(i => i + 1);
+        syncState(board, moves, invalidMoves + 1);
         showToastError("Conflict detected!");
         
         // Flash conflict cell
@@ -229,6 +250,7 @@ export default function GameScreen() {
       newBoard[row][col] = 1;
       setBoard(newBoard);
       setMoves(m => m + 1);
+      syncState(newBoard, moves + 1, invalidMoves);
       
       checkCompletion(newBoard, moves + 1);
     }
