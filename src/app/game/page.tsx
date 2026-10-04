@@ -340,7 +340,7 @@ export default function GameScreen() {
       {/* Board */}
       <div className="relative z-10 flex-1 flex items-center justify-center w-full">
         <div 
-          className="grid border-4 border-gray-600 shadow-[0_0_30px_rgba(0,240,255,0.3)] bg-[#0f0f15]/80 backdrop-blur-sm"
+          className="grid border-4 border-gray-800 shadow-[0_0_30px_rgba(0,240,255,0.2)] bg-black/50 backdrop-blur-sm"
           style={{ 
             gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`,
             width: 'min(90vw, 60vh)',
@@ -356,14 +356,13 @@ export default function GameScreen() {
                 <div 
                   key={`${r}-${c}`}
                   id={`cell-${r}-${c}`}
-                  className={`board-cell aspect-square flex items-center justify-center cursor-pointer overflow-hidden
+                  className={`board-cell aspect-square flex items-center justify-center cursor-pointer overflow-hidden transition-all duration-200
                     ${isBlack ? 'black' : 'white'}
-                    ${isAttacked ? 'attacked' : ''}
-                    ${cell === 1 ? 'queen' : ''}
+                    ${isAttacked ? 'bg-[rgba(255,40,70,0.35)] shadow-[inset_0_0_18px_rgba(255,30,60,0.45)] border border-transparent z-10' : 'border border-white/5'}
                   `}
                   onClick={() => handleCellClick(r, c)}
                 >
-                  <div className="absolute inset-0 hover-highlight opacity-0 hover:opacity-100 bg-white/10 pointer-events-none transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 hover-highlight opacity-0 hover:opacity-100 bg-white/5 pointer-events-none transition-opacity duration-300"></div>
                   
                   <AnimatePresence>
                     {cell === 1 && (
