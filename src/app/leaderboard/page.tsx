@@ -88,25 +88,25 @@ export default function LeaderboardScreen() {
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr className="border-b-2 border-[var(--color-neon-cyan)] text-xs md:text-sm uppercase tracking-widest text-gray-400">
-                  <th className="p-4 w-16 text-center">Rank</th>
-                  <th className="p-4">Player</th>
-                  <th className="p-4 text-center">Level</th>
-                  <th className="p-4 text-center">Total Time</th>
-                  <th className="p-4 text-center">Moves</th>
-                  <th className="p-4 text-center">Invalid</th>
+                <tr className="border-b-2 border-[var(--color-neon-cyan)] text-[10px] sm:text-sm uppercase tracking-widest text-gray-400">
+                  <th className="p-2 sm:p-4 w-10 sm:w-16 text-center">Rank</th>
+                  <th className="p-2 sm:p-4">Player</th>
+                  <th className="p-2 sm:p-4 text-center">Level</th>
+                  <th className="p-2 sm:p-4 text-center">Time</th>
+                  <th className="p-2 sm:p-4 text-center">Moves</th>
+                  <th className="p-2 sm:p-4 text-center">Invalid</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-[var(--color-neon-cyan)] animate-pulse font-comic tracking-widest">
+                    <td colSpan={6} className="p-4 sm:p-8 text-center text-[var(--color-neon-cyan)] animate-pulse font-comic tracking-widest text-sm sm:text-base">
                       SYNCING ACROSS MULTIVERSE...
                     </td>
                   </tr>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500 italic">
+                    <td colSpan={6} className="p-4 sm:p-8 text-center text-gray-500 italic text-sm sm:text-base">
                       No heroes have progressed yet.
                     </td>
                   </tr>
@@ -116,8 +116,8 @@ export default function LeaderboardScreen() {
                       const isMe = entry.isCurrentPlayer;
                       return (
                         <motion.tr 
-                          key={entry.username} // Use username as key for correct animation tracking
-                          layout // Smooth movement when ranks change!
+                          key={entry.username}
+                          layout
                           ref={isMe ? rowRef : null}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -127,23 +127,23 @@ export default function LeaderboardScreen() {
                               : 'border-white/10 hover:bg-white/5'}
                           `}
                         >
-                          <td className="p-4 text-center font-bold text-xl font-comic" style={{ color: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : 'white' }}>
+                          <td className="p-2 sm:p-4 text-center font-bold text-base sm:text-xl font-comic" style={{ color: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : 'white' }}>
                             #{idx + 1}
                           </td>
-                          <td className="p-4 font-bold text-lg flex items-center gap-2">
-                            <span className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px] inline-block">{entry.username}</span>
+                          <td className="p-2 sm:p-4 font-bold text-sm sm:text-lg flex flex-wrap items-center gap-1 sm:gap-2">
+                            <span className="truncate max-w-[80px] sm:max-w-[200px] md:max-w-[300px] inline-block">{entry.username}</span>
                             {isMe && (
-                              <span className="bg-[var(--color-neon-cyan)] text-black text-xs px-2 py-0.5 font-black uppercase tracking-widest rounded-sm transform -skew-x-12 shrink-0">
+                              <span className="bg-[var(--color-neon-cyan)] text-black text-[9px] sm:text-xs px-1 sm:px-2 py-0.5 font-black uppercase tracking-widest rounded-sm transform -skew-x-12 shrink-0">
                                 YOU
                               </span>
                             )}
                           </td>
-                          <td className="p-4 text-center font-bold text-[var(--color-neon-cyan)]">
-                            {entry.status === 'completed' ? 'Completed' : `Level ${entry.currentLevel}`}
+                          <td className="p-2 sm:p-4 text-center font-bold text-xs sm:text-base text-[var(--color-neon-cyan)]">
+                            {entry.status === 'completed' ? 'Done' : `Lvl ${entry.currentLevel}`}
                           </td>
-                          <td className="p-4 text-center font-mono">{formatTime(entry.totalTime)}</td>
-                          <td className="p-4 text-center font-mono">{entry.totalMoves}</td>
-                          <td className="p-4 text-center font-mono text-[var(--color-neon-red)]">{entry.totalInvalidMoves}</td>
+                          <td className="p-2 sm:p-4 text-center font-mono text-xs sm:text-base">{formatTime(entry.totalTime)}</td>
+                          <td className="p-2 sm:p-4 text-center font-mono text-xs sm:text-base">{entry.totalMoves}</td>
+                          <td className="p-2 sm:p-4 text-center font-mono text-xs sm:text-base text-[var(--color-neon-red)]">{entry.totalInvalidMoves}</td>
                         </motion.tr>
                       );
                     })}
@@ -154,21 +154,23 @@ export default function LeaderboardScreen() {
           </div>
         </div>
 
-        {/* YOUR RANK Card (Normal Document Flow) */}
+        {/* YOUR RANK Card (Sticky Document Flow) */}
         {!loading && currentPlayer && (
-          <div 
-            onClick={scrollToMyRank}
-            className="cursor-pointer comic-panel bg-black/95 border-2 border-[var(--color-neon-magenta)] p-4 md:p-6 shadow-[0_0_20px_rgba(255,0,255,0.3)] hover:shadow-[0_0_30px_rgba(255,0,255,0.6)] transition-all flex flex-col gap-3 w-full"
-          >
-            <div className="flex justify-between items-end border-b border-white/10 pb-2">
-              <span className="text-[var(--color-neon-magenta)] font-bold uppercase tracking-widest text-sm md:text-lg">YOUR RANK</span>
-              <span className="text-3xl md:text-5xl font-black font-comic text-white">#{currentPlayerIndex + 1}</span>
-            </div>
-            <div className="flex flex-wrap justify-between items-center text-sm md:text-lg text-gray-300 font-mono gap-4">
-              <span className="font-bold text-white font-sans truncate flex-1 min-w-[120px]">{currentPlayer.username}</span>
-              <span className="text-[var(--color-neon-cyan)] font-bold">{currentPlayer.status === 'completed' ? 'Completed' : `Level ${currentPlayer.currentLevel}`}</span>
-              <span>{formatTime(currentPlayer.totalTime)}</span>
-              <span>{currentPlayer.totalMoves} moves</span>
+          <div className="sticky bottom-4 z-50 w-full mt-2">
+            <div 
+              onClick={scrollToMyRank}
+              className="cursor-pointer comic-panel bg-black/95 backdrop-blur-md border-2 border-[var(--color-neon-magenta)] p-3 md:p-6 shadow-[0_0_20px_rgba(255,0,255,0.4)] hover:shadow-[0_0_30px_rgba(255,0,255,0.7)] transition-all flex flex-col gap-2 w-full"
+            >
+              <div className="flex justify-between items-end border-b border-white/10 pb-2">
+                <span className="text-[var(--color-neon-magenta)] font-bold uppercase tracking-widest text-xs sm:text-sm md:text-lg">YOUR RANK</span>
+                <span className="text-2xl sm:text-3xl md:text-5xl font-black font-comic text-white">#{currentPlayerIndex + 1}</span>
+              </div>
+              <div className="flex flex-wrap justify-between items-center text-xs sm:text-sm md:text-lg text-gray-300 font-mono gap-2 sm:gap-4">
+                <span className="font-bold text-white font-sans truncate flex-1 min-w-[80px]">{currentPlayer.username}</span>
+                <span className="text-[var(--color-neon-cyan)] font-bold">{currentPlayer.status === 'completed' ? 'Done' : `Lvl ${currentPlayer.currentLevel}`}</span>
+                <span>{formatTime(currentPlayer.totalTime)}</span>
+                <span>{currentPlayer.totalMoves} moves</span>
+              </div>
             </div>
           </div>
         )}
