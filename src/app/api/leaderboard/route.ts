@@ -13,10 +13,21 @@ export async function GET() {
     const db = client.db(dbName);
     const collection = db.collection('attempts');
 
-    // Fetch all completed attempts, sorted by totalTime ASC, totalMoves ASC, totalInvalidMoves ASC
+    // Fetch attempts that have at least finished Level 4
     const leaderboardDocs = await collection
-      .find({ status: 'completed' })
-      .sort({ totalTime: 1, totalMoves: 1, totalInvalidMoves: 1 })
+      .find({
+        $or: [
+          { status: 'completed' },
+          { currentLevel: { $gt: 4 } }
+        ]
+      })
+      .sort({ 
+        status: 1, // 'completed' comes before 'in_progress'
+        currentLevel: -1, 
+        totalTime: 1, 
+        totalMoves: 1, 
+        totalInvalidMoves: 1 
+      })
       .toArray();
 
     const leaderboard = leaderboardDocs.map((doc) => ({
@@ -25,6 +36,8 @@ export async function GET() {
       totalMoves: doc.totalMoves,
       totalInvalidMoves: doc.totalInvalidMoves,
       completedAt: doc.completedAt,
+      currentLevel: doc.currentLevel,
+      status: doc.status,
       isCurrentPlayer: doc.deviceId === deviceId
     }));
 
