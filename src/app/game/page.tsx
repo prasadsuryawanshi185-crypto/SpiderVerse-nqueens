@@ -14,10 +14,12 @@ export default function GameScreen() {
   const [moves, setMoves] = useState(0);
   const [invalidMoves, setInvalidMoves] = useState(0);
   const [levelStartTime, setLevelStartTime] = useState<number | null>(null);
+  const [previousTotalTime, setPreviousTotalTime] = useState(0);
   const [isLevelCompleted, setIsLevelCompleted] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isTimeoutReached, setIsTimeoutReached] = useState(false);
 
   // Fetch current attempt
   useEffect(() => {
@@ -48,7 +50,10 @@ export default function GameScreen() {
 
         const startTs = new Date(attempt.levelStartTime).getTime();
         setLevelStartTime(startTs);
-        setTime(Math.max(0, Math.floor((Date.now() - startTs) / 1000)));
+        setPreviousTotalTime(attempt.totalTime || 0);
+
+        const elapsedLevelTime = Math.max(0, Math.floor((Date.now() - startTs) / 1000));
+        setTime(elapsedLevelTime);
         
         setMoves(attempt.currentMoves || 0);
         setInvalidMoves(attempt.currentInvalidMoves || 0);
@@ -65,16 +70,42 @@ export default function GameScreen() {
     fetchAttempt();
   }, [router]);
 
-  // Timer securely based on server timestamp
+  const handleTimeout = useCallback(async () => {
+    setTimerActive(false);
+    setIsTimeoutReached(true);
+    setIsLevelCompleted(true);
+    
+    try {
+      await fetch("/api/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isTimeout: true }),
+      });
+      router.push("/leaderboard");
+    } catch (e) {
+      console.error("Timeout sync failed", e);
+      router.push("/leaderboard");
+    }
+  }, [router]);
+
+  // Timer securely based on server timestamp & enforce 7-minute limit
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timerActive && !isLevelCompleted && levelStartTime) {
       interval = setInterval(() => {
-        setTime(Math.max(0, Math.floor((Date.now() - levelStartTime) / 1000)));
+        const currentLevelTime = Math.max(0, Math.floor((Date.now() - levelStartTime) / 1000));
+        const totalPlayedTime = previousTotalTime + currentLevelTime;
+        
+        if (totalPlayedTime >= 420) {
+          clearInterval(interval);
+          handleTimeout();
+        } else {
+          setTime(currentLevelTime);
+        }
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [timerActive, isLevelCompleted, levelStartTime]);
+  }, [timerActive, isLevelCompleted, levelStartTime, previousTotalTime, handleTimeout]);
 
   const isValidPlacement = (currentBoard: number[][], row: number, col: number) => {
     if (!n) return false;
@@ -138,7 +169,7 @@ export default function GameScreen() {
   };
 
   const handleLevelCompletion = async (finalMoves: number, finalBoard: number[][]) => {
-    if (!n) return;
+    if (!n || isTimeoutReached) return;
     setTimerActive(false);
     setIsLevelCompleted(true);
     
@@ -324,7 +355,9 @@ export default function GameScreen() {
         <div className="flex gap-4 md:gap-8 text-sm md:text-lg">
           <div className="flex flex-col items-center">
             <span className="text-gray-400">TIME</span>
-            <span className="font-mono text-white text-xl">{formatTime(time)}</span>
+            <span className={`font-mono text-xl ${previousTotalTime + time >= 390 ? 'text-[var(--color-neon-red)] animate-pulse' : 'text-white'}`}>
+              {formatTime(time)}
+            </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-gray-400">MOVES</span>
@@ -380,18 +413,21 @@ export default function GameScreen() {
 
         {/* Completion Overlay */}
         <AnimatePresence>
-          {isLevelCompleted && (
+          {(isLevelCompleted || isTimeoutReached) && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               className="absolute inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-md"
             >
               <div className="text-center">
-                <h2 className="text-6xl font-black text-white text-glitch mb-4" data-text={n === 6 ? "CHALLENGE COMPLETE" : "DIMENSION CLEARED"}>
-                  {n === 6 ? "CHALLENGE COMPLETE" : "DIMENSION CLEARED"}
+                <h2 
+                  className="text-4xl md:text-6xl font-black text-white text-glitch mb-4" 
+                  data-text={isTimeoutReached ? "TIME LIMIT EXCEEDED" : n === 6 ? "CHALLENGE COMPLETE" : "DIMENSION CLEARED"}
+                >
+                  {isTimeoutReached ? "TIME LIMIT EXCEEDED" : n === 6 ? "CHALLENGE COMPLETE" : "DIMENSION CLEARED"}
                 </h2>
-                <p className="text-xl text-[var(--color-neon-cyan)] animate-pulse">
-                  {n === 6 ? "Submitting Final Results..." : "Traveling to next dimension..."}
+                <p className={`text-xl animate-pulse ${isTimeoutReached ? 'text-[var(--color-neon-red)]' : 'text-[var(--color-neon-cyan)]'}`}>
+                  {isTimeoutReached || n === 6 ? "Submitting Final Results..." : "Traveling to next dimension..."}
                 </p>
               </div>
             </motion.div>

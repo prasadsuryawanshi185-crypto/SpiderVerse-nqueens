@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
     if (!deviceId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { level, board, moves, invalidMoves } = await req.json();
+    const { level, board, moves, invalidMoves, isTimeout } = await req.json();
 
     const client = await clientPromise;
     const db = client.db(dbName);
@@ -104,6 +104,30 @@ export async function POST(req: Request) {
     
     if (!attempt) return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
     if (attempt.status === 'completed') return NextResponse.json({ error: "Challenge already completed" }, { status: 403 });
+
+    if (isTimeout) {
+      const startTime = attempt.levelStartTime ? new Date(attempt.levelStartTime).getTime() : Date.now();
+      const actualTimeSpent = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+      
+      const newTotalTime = (attempt.totalTime || 0) + actualTimeSpent;
+
+      const updateDoc = {
+        $set: {
+          totalTime: Math.min(newTotalTime, 420), // Cap at 420 seconds (7 mins) for consistency
+          status: 'completed',
+          completedAt: new Date(),
+          currentBoard: null,
+        }
+      };
+
+      await collection.updateOne({ deviceId }, updateDoc);
+
+      return NextResponse.json({ 
+        success: true, 
+        isCompleted: true 
+      });
+    }
+
     if (attempt.currentLevel !== level) return NextResponse.json({ error: "Level mismatch" }, { status: 400 });
 
     // Validate board strictly on backend
